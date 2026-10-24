@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+<head>
+    <title>Beschreibung HW#6 (Image upscaling, 4 points)</title>
+    <meta charset="utf-8">
+    
+</head>
+<body>
+<ul>
+<li>You are to write an algorithm which 1) upscale an image (characterized by a<br>single float for each pixel) from Full HD (1920x1080 pixels) to 4K (3840x2160<br>pixels) by bilinear interpolation, and 2) performs convolution of the resulting<br>upscaled image with a 19x19 mask, treating the ghost pixels as zero values</li>
+<li>Implement a CPU version and use it as a base case for comparison in terms<br>of performance and the result correctness</li>
+<li>Implement a GPU version using just the usual global memory for all arrays</li>
+<li>Implement a GPU version using the constant memory for the mas k array, but<br>global memory for the image array</li>
+<li>Implement a GPU version using the constant memory for the mask array, and<br>texture memory for the image array, using the texture based interpolation, not<br>counting the time it takes to initially put the image into the texture memory</li>
+<li>Compare performance of the different implementations</li>
+<li>Follow the usual homework submission guidelines</li>
+</ul>
+</body>
+</html>

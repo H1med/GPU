@@ -1,0 +1,11 @@
+<!doctype html>
+<html>
+<head>
+    <title>Beschreibung HW#7 (atomic reductions, 3 points)</title>
+    <meta charset="utf-8">
+    
+</head>
+<body>
+<p>For a floating point vector of 40MB size:<br><br>- Write a CPU implementation of the reduction algorithm (sum of all the<br>elements). Use it for checking all of GPU outputs!!!<br><br>- Write a GPU implementation of the reduction algorithm using the atomic add<br>functions on one variable in the global memory<br><br>- Write a GPU implementation of the reduction algorithm using a “cascaded<br>algorithm”, use all of the following: fix the number of blocks to the<br>approximate number of active blocks on your GPU (estimate it from the<br>number of the SMs on your GPU and occupancy), sub reduce on the thread<br>level using registers, each thread processing multiple elements (aggregation<br>and coarsening), sub reduce on the block level using the atomic add functions<br>in the shared memory (privatization), finally reduce on the grid level in the<br>global memory.<br><br>- Follow the usual homework submission guidelines</p>
+</body>
+</html>
