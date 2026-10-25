@@ -1,0 +1,57 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "CUDA: build (nvcc)",
+      "type": "shell",
+      "command": "\"${workspaceFolder}\\.vscode\\nvcc-build.bat\" \"${file}\"",
+      "options": {
+        "shell": {
+          "executable": "cmd.exe",
+          "args": ["/d", "/s", "/c"]
+        }
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$msCompile"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      }
+    },
+    {
+      "label": "CUDA: run",
+      "type": "process",
+      "command": "${fileDirname}\\${fileBasenameNoExtension}.exe",
+      "dependsOn": "CUDA: build (nvcc)",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      "label": "CUDA: build + run",
+      "dependsOrder": "sequence",
+      "dependsOn": ["CUDA: build (nvcc)", "CUDA: run"],
+      "problemMatcher": []
+    },
+    {
+      "label": "CUDA: compute-sanitizer",
+      "type": "process",
+      "command": "${env:CUDA_PATH}\\compute-sanitizer\\compute-sanitizer.exe",
+      "args": ["${fileDirname}\\${fileBasenameNoExtension}.exe"],
+      "dependsOn": "CUDA: build (nvcc)",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    }
+  ]
+}
