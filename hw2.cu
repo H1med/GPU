@@ -6,9 +6,8 @@
 #include <math.h>
 #include <cuda_runtime.h>
 
-#define precision 1e-5f
 
-void createMatrix(float *M, int n)
+void initialData(float *M, int n)
 {
     for (int i = 0; i < n; ++i)
         M[i] = (float)rand() / (float)RAND_MAX;
@@ -24,8 +23,8 @@ void matrixAddCPU(const float *A, const float *B, float *C, int rows, int cols)
 
 __global__ void matrixAddGPU(const float *A, const float *B, float *C, int rows, int cols)
 {
-    int col = threadIdx.x + blockIdx.x * blockDim.x;
-    int row = threadIdx.y + blockIdx.y * blockDim.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x; 
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (row < rows && col < cols) {
         int idx = row * cols + col;
@@ -35,8 +34,10 @@ __global__ void matrixAddGPU(const float *A, const float *B, float *C, int rows,
 
 int checkResult(const float *cpuRef, const float *gpuRes, int n)
 {
+    double epsilon = 1.0E-8;
+
     for (int i = 0; i < n; ++i) {
-        if (fabsf(cpuRef[i] - gpuRes[i]) > precision) {
+        if (fabsf(cpuRef[i] - gpuRes[i]) > epsilon) {
             printf("Mismatch at index %d: CPU=%f GPU=%f\n", i, cpuRef[i], gpuRes[i]);
             return 0;
         }
@@ -61,11 +62,10 @@ double timeCPU(const float *A, const float *B, float *C, int rows, int cols, int
 
 float timeGPU(float *d_A, float *d_B, float *d_C, int rows, int cols, int bx, int by, int iter)
 {
-    dim3 block(bx, by, 1);
-    dim3 grid((cols + bx - 1) / bx, (rows + by - 1) / by, 1);
+    dim3 block(bx, by);
+    dim3 grid((cols + bx - 1) / bx, (rows + by - 1) / by);
     cudaEvent_t start, stop;
     float ms = 0.0f;
-    int i;
 
     matrixAddGPU<<<grid, block>>>(d_A, d_B, d_C, rows, cols);
     cudaDeviceSynchronize();
@@ -75,7 +75,7 @@ float timeGPU(float *d_A, float *d_B, float *d_C, int rows, int cols, int bx, in
 
     cudaEventRecord(start);
 
-    for (i = 0; i < iter; ++i)
+    for (int i = 0; i < iter; ++i)
         matrixAddGPU<<<grid, block>>>(d_A, d_B, d_C, rows, cols);
 
     cudaEventRecord(stop);
@@ -92,7 +92,7 @@ float timeGPU(float *d_A, float *d_B, float *d_C, int rows, int cols, int bx, in
 void runCase(int rows, int cols, int iterCpu, int iterGpu, int bx, int by)
 {
     int n = rows * cols;
-    size_t bytes = (size_t)n * sizeof(float);
+    int bytes = n * sizeof(float);
     float *A, *B, *Ccpu, *Cgpu;
     float *d_A, *d_B, *d_C;
     double cpuMs, speedup;
@@ -104,8 +104,8 @@ void runCase(int rows, int cols, int iterCpu, int iterGpu, int bx, int by)
     Ccpu = (float*)malloc(bytes);
     Cgpu = (float*)malloc(bytes);
 
-    createMatrix(A, n);
-    createMatrix(B, n);
+    initialData(A, n);
+    initialData(B, n);
 
     cpuMs = timeCPU(A, B, Ccpu, rows, cols, iterCpu);
 
@@ -147,22 +147,21 @@ int main(void)
     };
     int itersCpu[5] = {1000000, 100000, 200, 200, 200};
     int itersGpu[5] = {100000, 10000, 200, 200, 200};
-    int i;
 
     srand((unsigned)time(NULL));
 
-    printf("Matrix addition: CPU vs GPU (host<->device transfers excluded)\n\n");
+    printf("Matrix addition: CPU vs GPU\n\n");
 
     printf("%-16s %-12s %14s %14s %10s  %s\n",
-           "Matrix", "Block", "CPU [ms]", "GPU [ms]", "Speedup", "Check");
+           "Matrix", "Block", "CPU", "GPU", "Speedup Comparison", "Check");
 
-    for (i = 0; i < 5; ++i)
+    for (int i = 0; i < 5; ++i)
         runCase(sizes[i][0], sizes[i][1], itersCpu[i], itersGpu[i], 16, 16);
 
     printf("\nExecution configurations for 100 x 10000:\n\n");
 
     printf("%-16s %-12s %14s %14s %10s  %s\n",
-           "Matrix", "Block", "CPU [ms]", "GPU [ms]", "Speedup", "Check");
+           "Matrix", "Block", "CPU", "GPU", "Speedup Comparison", "Check");
 
     runCase(100, 10000, 200, 200, 16, 16);
     runCase(100, 10000, 200, 200, 16, 32);
