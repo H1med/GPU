@@ -1,0 +1,23 @@
+HW#3 Analysis
+
+GPU: NVIDIA GeForce RTX 4070 Ti, 60 SMs, 1536 threads or 48 warps per SM. GPU times are averaged over many kernel launches, one warmup call runs before timing and the data transfers are not included.
+
+
+1) 1000 x 1000 matrix addition, block size sweep
+
+I swept the block dimensions from 2 to 32 with an increment of 2 in both dimensions, so 16 x 16 = 256 configurations. For each configuration I read the occupancy with cudaOccupancyMaxActiveBlocksPerMultiprocessor together with the device attributes max threads per multiprocessor and warp size, and I measured the kernel time. Both 2D matrices are in the results file, and the code stores the minimum time and prints the best configuration at the end.
+
+What I see:
+The best configuration is 24 x 28 threads with 0.006168 ms and 87% occupancy, the CPU reference needs 0.840000 ms, so the GPU is about 136 times faster. Practically all configurations with 3 or more warps per block land in a narrow band around 0.0062 to 0.0075 ms. The kernel only performs one addition per element with 2 loads, 1 store and 1 add, so it is bound by the global memory traffic and the launch overhead, and the exact block shape does not matter much there.
+Blocks with less than 32 threads, for example 2 x 2 or 2 x 4, are clearly slower, with 2 x 2 taking up to 0.123630 ms, which is about 20x the best. They do not even fill a single warp, but the hardware still allocates whole warps, so lanes stay idle and many more blocks have to be scheduled. The occupancy API shows this with 50% for the small blocks. Blocks with only one or two full warps, like the blockDim.y = 2 row or 4 x 16, are still slightly slower at about 0.010 ms even with 100% occupancy, because each block offers the scheduler so little work.
+For sizes that are not multiples of 32 the occupancy drops to 52 to 66% in the high range. The matrix shows the warp granularity steps of 1/48, about 2.08%. Even the low occupancy corners time nearly optimal, so for this short memory bound kernel the occupancy alone does not decide the performance.
+The picked best configuration is one of many almost equal ones. When I reran the program the winner moved slightly and all candidates stayed around 0.0062 ms, which I attribute to measurement noise and GPU clock variations.
+So for this kernel the real requirement is a block with a few full warps. Blocks smaller than one warp waste warp lanes and take roughly 20x the time, and blocks with only one or two warps still lose a bit.
+
+2) Warp control divergence, 1D vector addition
+
+I used the 1D vector addition from the lecture with 262144 elements and 128 threads per block, a multiple of 32, so that the element index parity is the lane parity and the CPU reference maps to the same lanes as the GPU. Following the hint, the 32 lanes of a warp are split into n groups with the ranges int(32*i/n) to int(32*(i+1)/n). Every thread executes exactly one of the n groups and performs 100 FMAs inside it, so the total number of arithmetic operations per thread is identical for all n and only the branch structure changes. n = 1 means no divergence and for n = 32 the warp runs 32 serialized one lane passes. The result goes to global memory so the compiler cannot optimize the loop away.
+Each version was verified against the CPU reference. The GPU runs the 100 steps as one FMA chain and the CPU as separate multiply and add steps, so the rounding differences build up and I used a tolerance of 1.0E-2. The worst case I measured was around 5E-4.
+
+Result: the execution time grows nearly linearly with n, from 0.006527 ms at n = 1 up to 0.112445 ms at n = 32, a slowdown of 17.23x. This is exactly the serialization from the lecture. The scheduler executes branch i of the warp with only the lanes of group i active and has to run all n branch bodies one after another, while the useful work does not change at all. All the extra time is instruction issue on mostly inactive lanes, the memory traffic stays the same, so the whole growth is pure divergence overhead.
+So with the same arithmetic work per thread, warp control divergence alone degrades the kernel by about 17x here. The usual fix is to branch in units of whole warps and to keep the heavy arithmetic outside conditionals whenever possible.

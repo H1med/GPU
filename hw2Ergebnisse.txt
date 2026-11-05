@@ -1,0 +1,15 @@
+2) Matrix addition: CPU vs GPU
+
+Matrix           Block                   CPU            GPU         Speedup-Comparison  Check
+   10 x 10     16 x 16                   0.000102      0.004261               0.02          OK
+  100 x 100    16 x 16                   0.009800      0.009624               1.02          OK
+ 1000 x 1000   16 x 16                   0.855000      0.007049             121.29          OK
+  500 x 2000   16 x 16                   0.840000      0.007072             118.79          OK
+  100 x 10000  16 x 16                   0.850000      0.007035             120.83          OK
+
+4) Execution configurations for 100 x 10000:
+
+Matrix           Block                   CPU            GPU         Speedup-Comparison  Check
+  100 x 10000  16 x 16                   0.850000      0.007357             115.54          OK
+  100 x 10000  16 x 32                   0.865000      0.007992             108.23          OK
+  100 x 10000  32 x 16                   0.825000      0.007182             114.87          OK

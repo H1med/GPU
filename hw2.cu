@@ -153,7 +153,7 @@ int main(void)
     printf("Matrix addition: CPU vs GPU\n\n");
 
     printf("%-16s %-12s %14s %14s %10s  %s\n",
-           "Matrix", "Block", "CPU", "GPU", "Speedup Comparison", "Check");
+           "Matrix", "Block", "CPU", "GPU", "Speedup-Comparison", "Check");
 
     for (int i = 0; i < 5; ++i)
         runCase(sizes[i][0], sizes[i][1], itersCpu[i], itersGpu[i], 16, 16);
@@ -161,7 +161,7 @@ int main(void)
     printf("\nExecution configurations for 100 x 10000:\n\n");
 
     printf("%-16s %-12s %14s %14s %10s  %s\n",
-           "Matrix", "Block", "CPU", "GPU", "Speedup Comparison", "Check");
+           "Matrix", "Block", "CPU", "GPU", "Speedup-Comparison", "Check");
 
     runCase(100, 10000, 200, 200, 16, 16);
     runCase(100, 10000, 200, 200, 16, 32);
